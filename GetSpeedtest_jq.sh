@@ -2,6 +2,8 @@
 
 #$cmFle="[/path/to/my/]common.func"
 #-f "$cmFle" && . [/path/to/my/]common.func
+#$cmFle="common.func"
+#-f "$cmFle" && source "common.func"
 
 fErr() {
   echo "input file '$1' not found! Exiting."
@@ -17,18 +19,12 @@ exit_handler() {
     fi
 }
 
-inputFile="/home/pi/rastemppi/w1/last_speedtest_result";
-resultFile="/home/pi/rastemppi/w1/Data_Speedtest";
-speedtest --json > $inputFile;
 
-#if [[ -f "$inputFile" ]]; then
-#    fErr("$inputFile")
-#    echo "Tiedot Haettu"
-#if
+inputFile="/home/pi/rastemppi/w1/last_speedtest_result"
+resultFile="/home/pi/rastemppi/w1/Data_Speedtest"
+speedtest --json > $inputFile
 
-#if [[ ! -f "${inputFile}" ]]; then
-#    fErr("$inputFile")
-#if
+#!-f "$inputFile" && fErr "$inputFile"
 
 value=$(<"$inputFile")
 
@@ -38,37 +34,33 @@ ts=$(TZ="Europe/Helsinki" date -d "@$sec" "+%Y-%m-%d %H:%M:%S")
 
 dl=$( echo $value | jq '.download')
 dl=${dl%.*}
-#if [${#dl} -gt 6]; then
-    dl=${dl::${#dl}-6}.${dl:${#dl}-6:2}
-#else
-#    dl=0.${dl:${#dl}-6:2}
-#fi
+#dl=$( echo $value | jq '.download')
+#dlMb=$(echo "scale=2;$dl/1024" | bc -l)
+dl=$(echo "scale=2;$dl/1048576" | bc -l | sed 's/^\./0\./')
+#dl=$(echo "scale=2;$dl/1048576" | bc -l )
+#dl=echo ${'dl//#\./0\./'}
+
 
 ul=$( echo $value | jq '.upload')
 ul=${ul%.*}
-#if [${#ul} -gt 6]; then
-    ul=${ul::${#ul}-6}.${ul:${#ul}-6:2}
-#else
-#    ul=0.${ul:${#ul}-6:2}
-#fi
+#if [${#ul} -gt 6] && ulMb=$(echo "scale=2;$ul/1048576" | bc -l) || ulMb=$(echo "scale=2;$ul/1024" | bc -l)
+#ulMb=$(echo "scale=2;$ul/1024" | bc -l)
+ul=$(echo "scale=2;$ul/1048576" | bc -l | sed 's/^\./0\./')
+#ul=$(echo "scale=2;$ul/1048576" | bc -l )
+#ul=echo ${'ul//#\./0\./'}
 
 if [[ ! -f "$resultFile" ]]; then
 
-    echo "[timestamp,download,upload]" > $resultFile
-    echo ",[$ts,$dl,$ul]" >> $resultFile
+    //echo '{"resultData":[["timestamp","download","upload"]' > $resultFile
+    echo '{"resultData":[["'$ts'",'$dl','$ul']' >> $resultFile
 
 else
 
-    echo ",[$ts,$dl,$ul]" >> $resultFile
+    echo ',["'$ts'",'$dl','$ul']' >> $resultFile
 
 fi
 
-echo "[$ts,$dl,$ul]" 
+#!-f "$resultFile" && fErr "$resultFile"
 
-#if [[ ! -f $resultFile ]]; then
-#    fErr($resultFile)
-#fi
+echo '["'$ts'",'$dl','$ul']'
 
-
-
-exit_handler;
